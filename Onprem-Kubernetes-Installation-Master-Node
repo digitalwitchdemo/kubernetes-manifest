@@ -111,3 +111,37 @@ Wait for 5 minutes
 ---------------------------------------
 kubectl get nodes
 cilium status
+
+
+====================================
+Troubleshooting the Public ip cert issue with managed onprem master node cluster
+-----------------------------------------------------------------------------------
+1) kubectl -n kube-system get configmap kubeadm-config -o jsonpath='{.data.ClusterConfiguration}' > kubeadm-config.yaml
+
+2 ) edit the file ( kubeadm-config.yaml ) 
+`
+apiServer:
+  certSANs:
+  - "172.31.22.194"
+  - "YOUR_PUBLIC_IP"
+`
+
+3) remove the old cert what is linked to only the private ip
+sudo mv /etc/kubernetes/pki/apiserver.crt /etc/kubernetes/pki/apiserver.crt.old
+sudo mv /etc/kubernetes/pki/apiserver.key /etc/kubernetes/pki/apiserver.key.old
+
+4) # Generate the new ones using your updated config file
+sudo kubeadm init phase certs apiserver --config kubeadm-config.yaml
+
+5) delete the old .kube/config
+    rm -rf .kube/config
+
+6) Regenerate a new config  
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+7) cat the .kube/config 
+    cat .kube/config 
+    higlight and copy and paste in the OpenLens config file.
+
+
